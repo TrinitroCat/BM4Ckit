@@ -106,6 +106,8 @@ class _KrylovBase(_BaseOpt):
         self._eigenval: th.Tensor | None = None
         self._eigenvec: th.Tensor | None = None
         self._local_extra_converge_mask: th.Tensor | None = None
+        # a placeholder that is filled with True, with the same shape as `_local_extra_converge_mask`
+        self._ALL_TRUE_CACHE: th.Tensor | None = None
 
     def set_batch_updater(
             self,
@@ -292,7 +294,10 @@ class _KrylovBase(_BaseOpt):
         self._require_grad = require_grad
         # BaseOpt may report force/energy convergence only after the lowest
         # Ritz value confirms that each structure remains in a negative mode.
-        self._extra_converge_mask = self.eigenval[:, 0] < 0.
+        self._ALL_TRUE_CACHE = th.full_like(self.eigenval[:, 0], True, dtype=th.bool)
+        self._extra_converge_mask = (
+            self.eigenval[:, self._morse_index - 1] < 0. if self._morse_index > 0 else self._ALL_TRUE_CACHE
+        )
         # The initial eigen solve already supplied the checked energy/gradient;
         # no line-search cache exists until the first in-place update.
         self._line_search.HAS_GRAD = False
@@ -331,7 +336,11 @@ class _KrylovBase(_BaseOpt):
         # cache protocol, avoiding a duplicate model evaluation in BaseOpt.
         self._eigenval = eigenval
         self._eigenvec = eigenvec
-        self._local_extra_converge_mask = eigenval[:, 0] < 0.
+        self._local_extra_converge_mask = (
+            eigenval[:, self._morse_index - 1] < 0.
+            if self._morse_index > 1
+            else self._ALL_TRUE_CACHE[:eigenval.shape[0]]
+        )
         self._line_search.HAS_GRAD = True
         self._line_search.STORE_Y = energies
         self._line_search.STORE_GRAD = gradients
