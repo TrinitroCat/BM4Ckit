@@ -338,7 +338,7 @@ class _KrylovBase(_BaseOpt):
         self._eigenvec = eigenvec
         self._local_extra_converge_mask = (
             eigenval[:, self._morse_index - 1] < 0.
-            if self._morse_index > 1
+            if self._morse_index >= 1
             else self._ALL_TRUE_CACHE[:eigenval.shape[0]]
         )
         self._line_search.HAS_GRAD = True
