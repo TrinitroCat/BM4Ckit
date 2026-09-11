@@ -801,8 +801,8 @@ class Trainer(_BaseAPI):
                 self.logger.info(f"WARM-UP CIRCLE {_counter}.")
                 for k, v in pred_y.items():
                     if not isinstance(v, th.Tensor):
-                        self.logger.fatal(f'prediction "{k}" should be a tensor, but got {type(v)}.')
-                        raise
+                        self.logger.info(f'prediction "{k}" is not a tensor, but a {type(v)}.')
+                        continue
                     if v.requires_grad:
                         _has_grad_str = "REQUIRE GRADIENT"
                     else:
